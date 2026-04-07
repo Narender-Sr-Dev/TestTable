@@ -1,0 +1,34 @@
+name: Mirror EBA 2.0 to Azure DevOps
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add Azure DevOps remote
+        env:
+          AZDO_PAT: ${{ secrets.AZDO_PAT }}
+          AZDO_ORG: ${{ secrets.AZDO_ORG }}
+          AZDO_PROJECT: ${{ secrets.AZDO_PROJECT }}
+          AZDO_REPO: ${{ secrets.AZDO_REPO }}
+        run: |
+          git remote add azure "https://${AZDO_PAT}@${AZDO_ORG}.visualstudio.com/DefaultCollection/${AZDO_PROJECT}/_git/${AZDO_REPO}"
+
+      - name: Mirror current branch
+        run: |
+          BRANCH="${GITHUB_REF_NAME}"
+          git push azure "HEAD:refs/heads/${BRANCH}" --force
+
+      - name: Push tags
+        run: |
+          git push azure --tags --force
